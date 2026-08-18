@@ -607,28 +607,24 @@
   }
 
   async function loadData() {
-    try {
-      var parsed = await storageGetState();
-      if (parsed && Array.isArray(parsed.habits) && parsed.todos && Array.isArray(parsed.birthdays)) {
-        // Migration: older saves made before the Goals feature existed won't have this key
-        if (!parsed.goals) parsed.goals = defaultGoals();
-        GOAL_CATEGORIES.forEach(function (c) {
-          var g = parsed.goals[c.key];
-          if (!g) { parsed.goals[c.key] = { rating: 5, updatedAt: null, daily: [], annual: [] }; return; }
-          // Migration: earlier version had one flat items[] list per category — fold into daily[]
-          if (Array.isArray(g.items) && !Array.isArray(g.daily)) {
-            g.daily = g.items;
-            delete g.items;
-          }
-          if (!Array.isArray(g.daily)) g.daily = [];
-          if (!Array.isArray(g.annual)) g.annual = [];
-        });
-        // Migration: older saves made before the Journal feature existed won't have this key
-        if (!parsed.journal || typeof parsed.journal !== 'object') parsed.journal = {};
-        return parsed;
-      }
-    } catch (e) {
-      console.error('Could not load data from Firestore.', e);
+    var parsed = await storageGetState(); // null only means "no document yet" — real errors now throw
+    if (parsed && Array.isArray(parsed.habits) && parsed.todos && Array.isArray(parsed.birthdays)) {
+      // Migration: older saves made before the Goals feature existed won't have this key
+      if (!parsed.goals) parsed.goals = defaultGoals();
+      GOAL_CATEGORIES.forEach(function (c) {
+        var g = parsed.goals[c.key];
+        if (!g) { parsed.goals[c.key] = { rating: 5, updatedAt: null, daily: [], annual: [] }; return; }
+        // Migration: earlier version had one flat items[] list per category — fold into daily[]
+        if (Array.isArray(g.items) && !Array.isArray(g.daily)) {
+          g.daily = g.items;
+          delete g.items;
+        }
+        if (!Array.isArray(g.daily)) g.daily = [];
+        if (!Array.isArray(g.annual)) g.annual = [];
+      });
+      // Migration: older saves made before the Journal feature existed won't have this key
+      if (!parsed.journal || typeof parsed.journal !== 'object') parsed.journal = {};
+      return parsed;
     }
     return seedState();
   }
@@ -1276,24 +1272,37 @@
 
   function friendlyAuthError(e) {
     var code = e && e.code || '';
+    if (code === 'timeout') return 'Timed out — no response from Firebase. Check your connection or try a different network.';
     if (code.indexOf('wrong-password') !== -1 || code.indexOf('invalid-credential') !== -1 || code.indexOf('invalid-login-credentials') !== -1) return 'Incorrect email or password.';
     if (code.indexOf('user-not-found') !== -1) return 'No account with that email.';
     if (code.indexOf('too-many-requests') !== -1) return 'Too many attempts — wait a bit and try again.';
     if (code.indexOf('network') !== -1) return 'Network error — check your connection.';
+    if (code.indexOf('unauthorized-domain') !== -1) return "This site's domain isn't authorized in Firebase yet (Authentication → Settings → Authorized domains).";
     return (e && e.message) || 'Could not log in.';
+  }
+
+  function withTimeout(promise, ms) {
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () { reject({ code: 'timeout' }); }, ms);
+      promise.then(function (v) { clearTimeout(timer); resolve(v); }, function (e) { clearTimeout(timer); reject(e); });
+    });
   }
 
   document.getElementById('loginBtn').addEventListener('click', async function () {
     var email = document.getElementById('loginEmail').value.trim();
     var pass = document.getElementById('loginPassword').value;
     var err = document.getElementById('lockError');
+    var btn = document.getElementById('loginBtn');
     if (!email || !pass) { err.textContent = 'Enter your email and password.'; return; }
     err.textContent = 'Logging in…';
+    btn.disabled = true;
     try {
-      await auth.signInWithEmailAndPassword(email, pass);
+      await withTimeout(auth.signInWithEmailAndPassword(email, pass), 15000);
       // onAuthStateChanged (below) picks up the signed-in user and loads the app.
     } catch (e) {
       err.textContent = friendlyAuthError(e);
+    } finally {
+      btn.disabled = false;
     }
   });
 
@@ -1320,12 +1329,15 @@
       document.getElementById('lockTitle').textContent = 'Loading…';
       document.getElementById('lockSubtitle').textContent = 'Fetching your ledger.';
       try {
-        state = await loadData();
+        state = await withTimeout(loadData(), 15000);
         showApp();
         render();
       } catch (e) {
         console.error(e);
-        showLogin('Signed in, but could not load your data. Check your connection and reload.');
+        var detail = e && e.code === 'timeout'
+          ? 'Timed out loading your data.'
+          : 'Could not load your data — ' + ((e && (e.code || e.message)) || String(e)) + '.';
+        showLogin(detail + ' Check your connection, then reload the page.');
       }
     } else {
       currentUid = null;
