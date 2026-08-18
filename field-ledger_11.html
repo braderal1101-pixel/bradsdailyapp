@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Field Ledger">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#E7E8DC">
+<title>Field Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Karla:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #E7E8DC;
+    --ink: #23291C;
+    --card: #F6F5EC;
+    --moss: #4F6B4A;
+    --moss-dim: #7C9377;
+    --ember: #C8793A;
+    --ember-tint: rgba(200,121,58,0.12);
+    --muted: #8A8C74;
+    --line: #C9CAB8;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Karla', sans-serif;
+    min-height: 100vh;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(35,41,28,0.035) 0px, rgba(35,41,28,0.035) 1px, transparent 1px, transparent 28px);
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 40px 20px 100px; }
+
+  header.top {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-bottom: 2px solid var(--ink); padding-bottom: 18px; margin-bottom: 34px; gap: 16px;
+  }
+  .date-block .eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 4px;
+  }
+  .date-block h1 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: 34px; line-height: 1.05; margin: 0;
+    font-optical-sizing: auto;
+  }
+  .tally { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  .tally .frac { font-size: 28px; color: var(--moss); }
+  .tally .frac span.total { color: var(--muted); }
+  .tally .label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+
+  .section { margin-bottom: 44px; }
+  .section-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
+  }
+  .section-head .eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 3px;
+  }
+  .section-head h2 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: 21px; margin: 0;
+  }
+  .section-head .status {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);
+  }
+
+  .mission-card {
+    background: var(--card); border: 1.5px solid var(--line); border-left: 4px solid var(--moss);
+    border-radius: var(--radius); padding: 26px 28px;
+  }
+  .mission-card p {
+    font-family: 'Fraunces', serif; font-size: 16px; line-height: 1.6; margin: 0 0 14px; font-style: italic;
+  }
+  .mission-card p:last-of-type { margin-bottom: 0; }
+  .mantra-row { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line); text-align: center; }
+  .mantra-row .mantra-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 6px;
+  }
+  .mantra-row .mantra-text {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; letter-spacing: 0.03em;
+    color: var(--moss); margin: 0; font-style: normal;
+  }
+
+  .lock-overlay {
+    position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center;
+    justify-content: center; padding: 20px; z-index: 100;
+    background-image: repeating-linear-gradient(0deg, rgba(35,41,28,0.035) 0px, rgba(35,41,28,0.035) 1px, transparent 1px, transparent 28px);
+  }
+  .lock-card {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: var(--radius);
+    padding: 32px 30px; max-width: 340px; width: 100%; text-align: center;
+  }
+  .lock-card .eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 6px;
+  }
+  .lock-card h1 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 24px; margin: 0 0 8px; }
+  .lock-sub { font-size: 13px; color: var(--muted); margin: 0 0 20px; line-height: 1.5; }
+  #setPassFields, #enterPassFields { display: flex; flex-direction: column; gap: 10px; }
+  #setPassFields input, #enterPassFields input {
+    background: var(--bg); border: 1.5px solid var(--line); border-radius: var(--radius);
+    padding: 12px 14px; font-size: 15px; color: var(--ink); text-align: center;
+  }
+  #setPassFields input:focus, #enterPassFields input:focus { outline: 2px solid var(--moss); outline-offset: 2px; }
+  .lock-card .btn-dark { width: 100%; height: 44px; }
+  .lock-card .btn-ghost { width: 100%; margin-top: 10px; }
+  .lock-error { color: var(--ember); font-size: 12px; min-height: 16px; margin: 14px 0 0; }
+
+  .goals-chart-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 22px; }
+  .goals-callout {
+    font-family: 'Karla', sans-serif; font-size: 13px; color: var(--ink); text-align: center;
+    max-width: 480px; margin: 8px auto 0; line-height: 1.55;
+  }
+  .goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .goal-card { background: var(--card); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+  .goal-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; gap: 8px; }
+  .goal-card-head h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 16px; margin: 0; }
+  .goal-updated { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .goal-rating-row { display: flex; align-items: center; gap: 10px; }
+  .goal-rating-row input[type="range"] { flex: 1; accent-color: var(--moss); }
+  .goal-rating-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); width: 42px; text-align: right; }
+  .goal-subsection { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .goal-subsection:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  .goal-sub-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 8px;
+  }
+
+  .journal-textarea {
+    width: 100%; min-height: 170px; background: var(--card); border: 1.5px solid var(--line);
+    border-radius: var(--radius); padding: 14px 16px; font-family: 'Karla', sans-serif; font-size: 15px;
+    line-height: 1.65; color: var(--ink); resize: vertical;
+  }
+  .journal-textarea::placeholder { color: var(--muted); }
+  .journal-textarea:focus { outline: 2px solid var(--moss); outline-offset: 2px; }
+  .journal-meta {
+    display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);
+  }
+  .journal-entry { padding: 12px 0; border-bottom: 1px dashed var(--line); }
+  .journal-entry:last-child { border-bottom: none; }
+  .journal-entry .je-head {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center; margin: 0 0 6px;
+  }
+  .journal-entry .je-text {
+    font-family: 'Karla', sans-serif; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 560px) {
+    .goals-grid { grid-template-columns: 1fr; }
+  }
+
+  button { font-family: 'Karla', sans-serif; }
+  input, select { font-family: 'Karla', sans-serif; }
+
+  .add-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .add-row input[type="text"], .add-row select, .add-row input[type="number"], .add-row input[type="tel"] {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: var(--radius);
+    padding: 12px 14px; font-size: 15px; color: var(--ink);
+  }
+  .add-row input[type="text"] { flex: 1; min-width: 140px; }
+  .add-row input::placeholder { color: var(--muted); }
+  .add-row input:focus, select:focus, button:focus-visible, .dot:focus-visible, .chk:focus-visible {
+    outline: 2px solid var(--moss); outline-offset: 2px;
+  }
+  .btn-dark {
+    background: var(--ink); color: var(--card); border: none; border-radius: var(--radius);
+    padding: 0 20px; font-weight: 700; font-size: 14px; letter-spacing: 0.02em; cursor: pointer;
+    transition: background 0.15s ease; min-height: 44px;
+  }
+  .btn-dark:hover { background: var(--moss); }
+  .btn-ghost {
+    background: transparent; border: 1.5px solid var(--line); color: var(--ink);
+    border-radius: var(--radius); padding: 8px 14px; font-size: 13px; cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .btn-ghost:hover { border-color: var(--moss); }
+
+  /* Habits (unchanged mechanics) */
+  .habits { display: flex; flex-direction: column; gap: 12px; }
+  .habit {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px;
+  }
+  .chk {
+    width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--moss); background: transparent;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .chk.done { background: var(--moss); }
+  .chk.done::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--card); }
+  .chk:active { transform: scale(0.92); }
+  .chk.small { width: 22px; height: 22px; }
+  .chk.small.done::after { width: 8px; height: 8px; }
+  .habit-main { min-width: 0; }
+  .habit-name { font-family: 'Fraunces', serif; font-weight: 500; font-size: 17px; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .week { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .day-dot-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .day-letter { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); }
+  .dot { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--muted); background: transparent; cursor: pointer; padding: 0; }
+  .dot.filled { background: var(--moss-dim); border-color: var(--moss-dim); }
+  .dot.today { border-color: var(--ink); border-width: 2px; }
+  .dot.streak-fire.filled { background: var(--ember); border-color: var(--ember); }
+  .dot.future { opacity: 0.35; cursor: default; }
+  .side-col { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .streak-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .streak-num.fire { color: var(--ember); font-weight: 500; }
+  .del { background: none; border: none; color: var(--muted); font-size: 12px; font-family: 'IBM Plex Mono', monospace; cursor: pointer; opacity: 0.6; padding: 0; }
+  .del:hover { opacity: 1; color: var(--ember); }
+
+  .empty {
+    border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 32px 24px; text-align: center; color: var(--muted);
+  }
+  .empty p { margin: 0 0 4px; font-family: 'Fraunces', serif; font-size: 17px; color: var(--ink); }
+  .empty span { font-size: 13px; }
+
+  /* Birthdays */
+  .bday-card {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--card); border: 1.5px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .bday-card.today { border-color: var(--ember); background: var(--ember-tint); }
+  .bday-name { font-family: 'Fraunces', serif; font-size: 16px; margin: 0; }
+  .bday-name.sent { color: var(--muted); text-decoration: line-through; }
+  .bday-meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .pill {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 999px; background: var(--ink); color: var(--card); white-space: nowrap;
+  }
+  .pill.fire { background: var(--ember); }
+  .bday-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .bday-actions a, .bday-actions button {
+    font-size: 12px; text-decoration: none; padding: 7px 11px; border-radius: 7px; cursor: pointer;
+    border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); font-family: 'Karla', sans-serif;
+  }
+  .bday-actions a:hover, .bday-actions button:hover { border-color: var(--moss); }
+  .sent-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+
+  .notify-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .notify-row .hint { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+
+  .nodate-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    padding: 10px 4px; border-bottom: 1px dashed var(--line);
+  }
+  .nodate-row:last-child { border-bottom: none; }
+  .nodate-form { display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .nodate-form.open { display: flex; }
+  .nodate-form select, .nodate-form input {
+    background: var(--bg); border: 1.5px solid var(--line); border-radius: 7px; padding: 6px 8px; font-size: 13px;
+  }
+
+  details.browse { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+  details.browse summary {
+    cursor: pointer; padding: 12px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
+  }
+  .browse-inner { padding: 4px 16px 16px; }
+  .browse-month { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .browse-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .browse-item:last-child { border-bottom: none; }
+  .browse-item .nm { font-size: 14px; }
+  .browse-item .dt { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .browse-item input[type="tel"] {
+    width: 140px; font-size: 12px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg);
+  }
+  .browse-item .row-right { display: flex; align-items: center; gap: 8px; }
+
+  /* To-do */
+  .todo-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .todo-col-head {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px; display: flex; justify-content: space-between;
+  }
+  .todo-list { display: flex; flex-direction: column; gap: 8px; }
+  .todo-item {
+    display: flex; align-items: center; gap: 10px; background: var(--card); border: 1.5px solid var(--line);
+    border-radius: var(--radius); padding: 10px 12px;
+  }
+  .todo-text { flex: 1; font-size: 14px; overflow-wrap: anywhere; }
+  .todo-text.done { color: var(--muted); text-decoration: line-through; }
+  .todo-add { display: flex; gap: 8px; margin-bottom: 12px; }
+  .todo-add input {
+    flex: 1; background: var(--card); border: 1.5px solid var(--line); border-radius: 8px; padding: 9px 10px; font-size: 13px;
+  }
+  .todo-add button {
+    background: var(--ink); color: var(--card); border: none; border-radius: 8px; padding: 0 14px; cursor: pointer; font-size: 13px;
+  }
+  .todo-add button:hover { background: var(--moss); }
+
+  footer.note {
+    margin-top: 40px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: center;
+  }
+
+  @media (max-width: 560px) {
+    .habit { grid-template-columns: auto 1fr; }
+    .side-col { grid-column: 2; flex-direction: row; justify-content: space-between; width: 100%; margin-top: 8px; }
+    .date-block h1 { font-size: 26px; }
+    .tally .frac { font-size: 22px; }
+    .todo-cols { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-card">
+    <p class="eyebrow">Field Ledger</p>
+    <h1 id="lockTitle">Set a password</h1>
+    <p class="lock-sub" id="lockSubtitle">Choose a password to protect this ledger.</p>
+    <div id="setPassFields">
+      <input type="password" id="setPass1" placeholder="New password" autocomplete="new-password" />
+      <input type="password" id="setPass2" placeholder="Confirm password" autocomplete="new-password" />
+      <button type="button" class="btn-dark" id="setPassBtn">Set password</button>
+    </div>
+    <div id="enterPassFields" style="display:none;">
+      <input type="password" id="enterPass" placeholder="Password" autocomplete="current-password" />
+      <button type="button" class="btn-dark" id="unlockBtn">Unlock</button>
+      <button type="button" class="btn-ghost" id="resetPassBtn">Forgot password? Reset</button>
+    </div>
+    <p class="lock-error" id="lockError"></p>
+  </div>
+</div>
+<div class="wrap" id="mainWrap" style="display:none;">
+  <header class="top">
+    <div class="date-block">
+      <p class="eyebrow">Field Ledger</p>
+      <h1 id="todayDate">—</h1>
+    </div>
+    <div class="tally">
+      <div class="frac" id="tallyFrac">0<span class="total">/0</span></div>
+      <div class="label">habits tended</div>
+    </div>
+  </header>
+
+  <section class="section" id="missionSection">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">I. Read Daily</p>
+        <h2>Mission statement</h2>
+      </div>
+    </div>
+    <div class="mission-card">
+      <p>I am a loyal &amp; loving servant of God, husband, father, family member, &amp; friend. I am the most authentic, optimistic, hard-working person. I do everything with integrity and joy. I treat everyone with respect &amp; as a friend, focusing on them with a genuine curiosity. People look up to my character, work ethic, and confidence.</p>
+      <p>I attack every day full speed, striving for daily excellence &amp; glorify God with all my actions. I am the top rep in the country in my results with effort &amp; commitment to perfect my craft. I am generous &amp; live a life full of temperance.</p>
+      <p>I focus only on what I can control, live in the now, trust God&rsquo;s plan for me, &amp; actively seek gratitude.</p>
+      <p>It&rsquo;s a great day to be alive &amp; it&rsquo;s a great day to be me.</p>
+      <div class="mantra-row">
+        <p class="mantra-label">Mantra</p>
+        <p class="mantra-text">Excellence Daily</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="goalsSection">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">II. Life Balance</p>
+        <h2>Goals</h2>
+      </div>
+    </div>
+    <div class="goals-chart-wrap">
+      <div id="goalsChart"></div>
+      <p class="goals-callout" id="goalsCallout"></p>
+    </div>
+    <div class="goals-grid" id="goalsGrid"></div>
+  </section>
+
+  <section class="section" id="goalListsSection">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">III. Daily &amp; Annual</p>
+        <h2>Goals</h2>
+      </div>
+    </div>
+    <div class="goals-grid" id="goalsAllGrid"></div>
+  </section>
+
+  <section class="section" id="bdaySection">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">IV. Today's Signals</p>
+        <h2>Birthdays</h2>
+      </div>
+      <span class="status" id="bdayStatus"></span>
+    </div>
+
+    <div class="notify-row">
+      <button class="btn-ghost" id="notifyBtn">🔔 Enable notifications</button>
+      <span class="hint">Only fires while this tab is open on this device</span>
+    </div>
+
+    <div id="bdayToday"></div>
+    <div id="bdayUpcoming"></div>
+    <div id="bdayNoDate"></div>
+
+    <div style="margin: 14px 0;">
+      <button class="btn-ghost" id="toggleAddBday">+ Add a birthday</button>
+    </div>
+    <div class="add-row" id="addBdayForm" style="display:none;">
+      <input type="text" id="bdayName" placeholder="Name" />
+      <select id="bdayMonth">
+        <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+        <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
+        <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
+        <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+      </select>
+      <input type="number" id="bdayDay" min="1" max="31" placeholder="Day" style="width:70px;" />
+      <input type="tel" id="bdayPhone" placeholder="Phone (optional)" style="width:150px;" />
+      <button class="btn-dark" id="addBdayBtn">Add</button>
+    </div>
+
+    <details class="browse" style="margin-top:18px;">
+      <summary>Browse all birthdays</summary>
+      <div class="browse-inner" id="browseAll"></div>
+    </details>
+  </section>
+
+  <section class="section" id="habitSection">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">V. Habits</p>
+        <h2>Daily check-in</h2>
+      </div>
+    </div>
+    <div class="add-row">
+      <input type="text" id="newHabitInput" placeholder="Name a habit to start tracking…" maxlength="60" />
+      <button class="btn-dark" id="addHabitBtn">Add</button>
+
+    </div>
+    <div class="habits" id="habitsList"></div>
+  </section>
+
+  <section class="section" id="todoSection">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">VI. To-Do</p>
+        <h2>Personal &amp; work</h2>
+      </div>
+    </div>
+    <div class="todo-cols">
+      <div>
+        <div class="todo-col-head"><span>Personal</span><span id="personalCount">0 open</span></div>
+        <div class="todo-add">
+          <input type="text" id="personalInput" placeholder="Add a personal task…" maxlength="120" />
+          <button id="personalAddBtn">Add</button>
+        </div>
+        <div class="todo-list" id="personalList"></div>
+      </div>
+      <div>
+        <div class="todo-col-head"><span>Work</span><span id="workCount">0 open</span></div>
+        <div class="todo-add">
+          <input type="text" id="workInput" placeholder="Add a work task…" maxlength="120" />
+          <button id="workAddBtn">Add</button>
+        </div>
+        <div class="todo-list" id="workList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="journalSection">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">VII. Close the Day</p>
+        <h2>Journal</h2>
+      </div>
+    </div>
+    <textarea class="journal-textarea" id="journalToday" placeholder="Write freely about your day…" maxlength="8000"></textarea>
+    <div class="journal-meta">
+      <span id="journalSavedNote">&nbsp;</span>
+      <span id="journalTodayDate"></span>
+    </div>
+    <details class="browse" style="margin-top:16px;">
+      <summary id="journalPastSummary">Past entries</summary>
+      <div class="browse-inner" id="journalPast"></div>
+    </details>
+  </section>
+
+  <div class="notify-row" style="border-top: 1px solid var(--line); padding-top: 20px; margin-top: 10px;">
+    <button class="btn-ghost" id="exportBtn">⬇ Export data</button>
+    <button class="btn-ghost" id="importBtn">⬆ Import data</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none;">
+    <span class="hint">Backup — move this ledger's data to another device manually</span>
+  </div>
+
+  <footer class="note" id="storageBackendNote">Checking storage…</footer>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'field-ledger-data-v2';
+  var DAY_LETTERS = ['S','M','T','W','T','F','S'];
+  var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ---------- Storage backend detection ----------
+  // window.storage only exists inside Claude's live Artifact runtime. When this file is opened
+  // as a plain shared/downloaded file, it's undefined — every call would silently fail and the
+  // app would look permanently blank. Detect it once, and fall back to localStorage so the app
+  // always actually saves something, even if that "something" ends up being per-device only.
+  var HAS_CLOUD_STORAGE = !!(window.storage && typeof window.storage.get === 'function' && typeof window.storage.set === 'function');
+  var storageNote = document.getElementById('storageBackendNote');
+  if (storageNote) storageNote.textContent = HAS_CLOUD_STORAGE ? 'Synced to your Claude account' : 'Saved locally in this browser (not synced across devices)';
+
+  async function storageGet(key) {
+    if (HAS_CLOUD_STORAGE) {
+      try { return await window.storage.get(key, false); }
+      catch (e) { return null; } // key not found yet — legitimate first-run state
+    }
+    try {
+      var raw = localStorage.getItem(key);
+      return raw !== null ? { value: raw } : null;
+    } catch (e) { return null; }
+  }
+  async function storageSet(key, value) {
+    if (HAS_CLOUD_STORAGE) {
+      try { return await window.storage.set(key, value, false); }
+      catch (e) { console.error('Cloud storage save failed.', e); return null; }
+    }
+    try { localStorage.setItem(key, value); return { key: key, value: value }; }
+    catch (e) { console.error('Local storage save failed.', e); return null; }
+  }
+  async function storageDelete(key) {
+    if (HAS_CLOUD_STORAGE) {
+      try { return await window.storage.delete(key, false); }
+      catch (e) { return null; }
+    }
+    try { localStorage.removeItem(key); return { key: key, deleted: true }; }
+    catch (e) { return null; }
+  }
+
+  var SEED_BIRTHDAYS = [
+    {name:"Chad Baldwin", month:1, day:5}, {name:"Emily Puig", month:1, day:9},
+    {name:"Hayden McMurrey", month:1, day:27}, {name:"Jack Parker", month:1, day:28},
+    {name:"Kylie", month:1, day:11}, {name:"Michael Fritz", month:1, day:22},
+    {name:"C", month:2, day:25}, {name:"Ella Grossman", month:2, day:17},
+    {name:"Frannie", month:2, day:2}, {name:"Kitty Kat Kathleen Meiwmrowdow Axo", month:2, day:22},
+    {name:"Peggy Eral", month:2, day:18}, {name:"Andrew Campbell", month:3, day:27},
+    {name:"John Boyle", month:3, day:20}, {name:"Jordan Beckman", month:3, day:6},
+    {name:"Ali Naas", month:4, day:21}, {name:"Billy White", month:4, day:28},
+    {name:"Bob Pohlen", month:4, day:14}, {name:"Cody Cavalier", month:4, day:12},
+    {name:"Nick Howard", month:4, day:22}, {name:"Patrick Roberts", month:4, day:21},
+    {name:"Tristan Ashford", month:4, day:28}, {name:"Blake Paradise", month:5, day:23},
+    {name:"Jack Boyle", month:5, day:30}, {name:"Zack Leirdahl", month:5, day:31},
+    {name:"AJ", month:6, day:1}, {name:"Jaan Bains", month:6, day:14},
+    {name:"Jackson Simons", month:6, day:22}, {name:"Matthew New Number", month:6, day:13},
+    {name:"Tommy Hanson", month:6, day:30}, {name:"David Sowry", month:7, day:12},
+    {name:"Joe Galati", month:7, day:30}, {name:"Max Mullen", month:7, day:29},
+    {name:"Tyler Hope", month:7, day:13}, {name:"Andrew Rubenstein", month:8, day:18},
+    {name:"Ben Patterson", month:8, day:24}, {name:"Donna Quinlan", month:8, day:28},
+    {name:"Jake Greenstein", month:8, day:25}, {name:"Johnny King", month:8, day:21},
+    {name:"Shenee Boyle", month:8, day:13}, {name:"Tyler Zorn", month:8, day:18},
+    {name:"Alex Bennitt", month:9, day:17}, {name:"Jake Politte", month:9, day:20},
+    {name:"Luke Little", month:9, day:10}, {name:"Meredith Cannon", month:9, day:7},
+    {name:"Mike Gaslin", month:9, day:20}, {name:"Nick Mcintosh", month:9, day:21},
+    {name:"Patch Smith", month:9, day:21}, {name:"AJ Loudermilk", month:10, day:23},
+    {name:"Jake Wheeler", month:10, day:20, year:1994}, {name:"Kendall Rose", month:10, day:19},
+    {name:"Cliff Beasley", month:11, day:19}, {name:"Barrett Black", month:12, day:29},
+    {name:"Caroline Meyerson", month:12, day:16}, {name:"Dashawn", month:12, day:30},
+    {name:"Helen Boyle", month:12, day:9}, {name:"Jay Trapp", month:12, day:6},
+    {name:"Nathan Templeton", month:12, day:17},
+    {name:"Kasey Ralsron", month:null, day:null}, {name:"Tori Pollvogt", month:null, day:null},
+    {name:"Will Parlsey", month:null, day:null}, {name:"Maddie Nicks GF", month:null, day:null},
+    {name:"Kayla Jacks GF", month:null, day:null}, {name:"Roger Eral", month:null, day:null},
+    {name:"Matt Eral", month:null, day:null}
+  ];
+
+  var GOAL_CATEGORIES = [
+    { key: 'health', label: 'Health' },
+    { key: 'spiritual', label: 'Spiritual' },
+    { key: 'friends', label: 'Friends' },
+    { key: 'husband', label: 'Husband' },
+    { key: 'father', label: 'Father' },
+    { key: 'work', label: 'Work' },
+    { key: 'financial', label: 'Financial' },
+    { key: 'hobbies', label: 'Hobbies' }
+  ];
+
+  function uid(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function defaultGoals() {
+    var g = {};
+    GOAL_CATEGORIES.forEach(function (c) { g[c.key] = { rating: 5, updatedAt: null, daily: [], annual: [] }; });
+    return g;
+  }
+
+  function seedState() {
+    return {
+      habits: [],
+      todos: { personal: [], work: [] },
+      goals: defaultGoals(),
+      journal: {},
+      birthdays: SEED_BIRTHDAYS.map(function (b) {
+        return { id: uid('b'), name: b.name, month: b.month, day: b.day, year: b.year || null, phone: null, sentYears: {} };
+      })
+    };
+  }
+
+  async function loadData() {
+    try {
+      var res = await storageGet(STORAGE_KEY);
+      if (res && res.value) {
+        var parsed = JSON.parse(res.value);
+        if (parsed && Array.isArray(parsed.habits) && parsed.todos && Array.isArray(parsed.birthdays)) {
+          // Migration: older saves made before the Goals feature existed won't have this key
+          if (!parsed.goals) parsed.goals = defaultGoals();
+          GOAL_CATEGORIES.forEach(function (c) {
+            var g = parsed.goals[c.key];
+            if (!g) { parsed.goals[c.key] = { rating: 5, updatedAt: null, daily: [], annual: [] }; return; }
+            // Migration: earlier version had one flat items[] list per category — fold into daily[]
+            if (Array.isArray(g.items) && !Array.isArray(g.daily)) {
+              g.daily = g.items;
+              delete g.items;
+            }
+            if (!Array.isArray(g.daily)) g.daily = [];
+            if (!Array.isArray(g.annual)) g.annual = [];
+          });
+          // Migration: older saves made before the Journal feature existed won't have this key
+          if (!parsed.journal || typeof parsed.journal !== 'object') parsed.journal = {};
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // Key doesn't exist yet (first time this account has opened this ledger) — fall through to seed.
+    }
+    return seedState();
+  }
+
+  async function saveData() {
+    try {
+      var res = await storageSet(STORAGE_KEY, JSON.stringify(state));
+      if (!res) console.error('Storage save returned no result.');
+    } catch (e) {
+      console.error('Could not save data.', e);
+    }
+  }
+
+  var state = null;
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function toKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function todayKey() { return toKey(new Date()); }
+  function startOfToday() { var d = new Date(); d.setHours(0,0,0,0); return d; }
+  function currentYear() { return new Date().getFullYear(); }
+
+  function currentWeekDates() {
+    var now = startOfToday();
+    var sunday = new Date(now);
+    sunday.setDate(now.getDate() - now.getDay()); // getDay(): 0 = Sunday
+    var out = [];
+    for (var i = 0; i < 7; i++) { var d = new Date(sunday); d.setDate(sunday.getDate() + i); out.push(d); }
+    return out;
+  }
+
+  function computeStreak(entries) {
+    var streak = 0; var cursor = startOfToday();
+    if (!entries[toKey(cursor)]) cursor.setDate(cursor.getDate() - 1);
+    while (entries[toKey(cursor)]) { streak++; cursor.setDate(cursor.getDate() - 1); }
+    return streak;
+  }
+
+  function daysUntil(month, day) {
+    var today = startOfToday();
+    var y = today.getFullYear();
+    var candidate = new Date(y, month - 1, day);
+    candidate.setHours(0,0,0,0);
+    if (candidate < today) candidate = new Date(y + 1, month - 1, day);
+    return Math.round((candidate - today) / 86400000);
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str == null ? '' : str;
+    return div.innerHTML;
+  }
+
+  function firstName(name) { return (name || '').trim().split(/\s+/)[0] || name; }
+
+  function birthdayMessage(name) {
+    return 'Happy birthday, ' + firstName(name) + '! 🎂 Hope you have a great day!';
+  }
+
+  function smsHref(phone, msg) {
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    var sep = isIOS ? '&' : '?';
+    return 'sms:' + encodeURIComponent(phone) + sep + 'body=' + encodeURIComponent(msg);
+  }
+
+  // ---------- Rendering ----------
+
+  function renderDate() {
+    document.getElementById('todayDate').textContent =
+      new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+
+  function renderTally() {
+    var total = state.habits.length;
+    var done = state.habits.filter(function (h) { return h.entries[todayKey()]; }).length;
+    document.getElementById('tallyFrac').innerHTML = done + '<span class="total">/' + total + '</span>';
+  }
+
+  function habitTemplate(habit) {
+    var tKey = todayKey();
+    var doneToday = !!habit.entries[tKey];
+    var streak = computeStreak(habit.entries);
+    var onFire = streak >= 7;
+    var days = currentWeekDates();
+    var dotsHtml = days.map(function (d) {
+      var key = toKey(d);
+      var filled = !!habit.entries[key];
+      var isToday = key === tKey;
+      var isFuture = key > tKey;
+      var letter = DAY_LETTERS[d.getDay()];
+      return '<div class="day-dot-col">' +
+        '<button type="button" class="dot' + (filled ? ' filled' : '') + (isToday ? ' today' : '') + (onFire ? ' streak-fire' : '') + (isFuture ? ' future' : '') +
+        '" data-habit="' + habit.id + '" data-date="' + key + '"' + (isFuture ? ' disabled' : '') + ' aria-label="' + letter + ' ' + key + (isFuture ? ', upcoming' : (filled ? ', done' : ', not done')) + '"></button>' +
+        '<span class="day-letter">' + letter + '</span></div>';
+    }).join('');
+    return '<div class="habit" data-id="' + habit.id + '">' +
+      '<button type="button" class="chk' + (doneToday ? ' done' : '') + '" data-habit="' + habit.id + '" aria-label="Mark ' + escapeHtml(habit.name) + (doneToday ? ' not done today' : ' done today') + '"></button>' +
+      '<div class="habit-main"><p class="habit-name">' + escapeHtml(habit.name) + '</p><div class="week">' + dotsHtml + '</div></div>' +
+      '<div class="side-col"><span class="streak-num' + (onFire ? ' fire' : '') + '">' + streak + (streak === 1 ? ' day' : ' days') + '</span>' +
+      '<button type="button" class="del" data-del-habit="' + habit.id + '">remove</button></div></div>';
+  }
+
+  function renderHabits() {
+    renderTally();
+    var list = document.getElementById('habitsList');
+    if (state.habits.length === 0) {
+      list.innerHTML = '<div class="empty"><p>No habits yet</p><span>Add one above to start today\'s row.</span></div>';
+      return;
+    }
+    list.innerHTML = state.habits.map(habitTemplate).join('');
+  }
+
+  function bdayActionsHtml(b) {
+    var msg = birthdayMessage(b.name);
+    var year = currentYear();
+    var sent = !!b.sentYears[year];
+    var html = '<div class="bday-actions">';
+    html += '<button type="button" data-copy="' + b.id + '">Copy message</button>';
+    if (b.phone) html += '<a href="' + smsHref(b.phone, msg) + '">Text now</a>';
+    html += '<label class="sent-toggle"><input type="checkbox" data-sent="' + b.id + '" ' + (sent ? 'checked' : '') + ' style="accent-color: var(--moss);"> sent this year</label>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderBirthdays() {
+    var dated = state.birthdays.filter(function (b) { return b.month && b.day; })
+      .map(function (b) { return Object.assign({}, b, { _in: daysUntil(b.month, b.day) }); })
+      .sort(function (a, c) { return a._in - c._in; });
+    var noDate = state.birthdays.filter(function (b) { return !b.month || !b.day; });
+
+    var todays = dated.filter(function (b) { return b._in === 0; });
+    var upcoming = dated.filter(function (b) { return b._in > 0 && b._in <= 7; });
+
+    document.getElementById('bdayStatus').textContent =
+      todays.length ? (todays.length + ' today') : (upcoming.length ? upcoming.length + ' this week' : 'quiet week');
+
+    var todayEl = document.getElementById('bdayToday');
+    if (todays.length) {
+      todayEl.innerHTML = todays.map(function (b) {
+        var year = currentYear();
+        var sent = !!b.sentYears[year];
+        return '<div class="bday-card today"><div><p class="bday-name' + (sent ? ' sent' : '') + '">' + escapeHtml(b.name) + '</p>' +
+          '<p class="bday-meta">' + MONTH_NAMES[b.month - 1] + ' ' + b.day + '</p></div>' +
+          '<div style="display:flex;align-items:center;gap:10px;"><span class="pill fire">today</span></div></div>' +
+          '<div style="margin:-6px 0 10px;">' + bdayActionsHtml(b) + '</div>';
+      }).join('');
+    } else {
+      todayEl.innerHTML = '';
+    }
+
+    var upEl = document.getElementById('bdayUpcoming');
+    if (upcoming.length) {
+      upEl.innerHTML = upcoming.map(function (b) {
+        return '<div class="bday-card"><div><p class="bday-name">' + escapeHtml(b.name) + '</p>' +
+          '<p class="bday-meta">' + MONTH_NAMES[b.month - 1] + ' ' + b.day + '</p></div>' +
+          '<div style="display:flex;align-items:center;gap:10px;"><span class="pill">in ' + b._in + (b._in === 1 ? ' day' : ' days') + '</span></div></div>' +
+          '<div style="margin:-6px 0 10px;">' + bdayActionsHtml(b) + '</div>';
+      }).join('');
+    } else if (!todays.length) {
+      upEl.innerHTML = '<div class="empty"><p>No birthdays this week</p><span>Enjoy the quiet.</span></div>';
+    } else {
+      upEl.innerHTML = '';
+    }
+
+    var noDateEl = document.getElementById('bdayNoDate');
+    if (noDate.length) {
+      noDateEl.innerHTML = '<div class="empty" style="text-align:left;padding:16px 18px;">' +
+        '<p style="margin-bottom:10px;">No date on file (' + noDate.length + ')</p>' +
+        noDate.map(function (b) {
+          return '<div class="nodate-row"><span>' + escapeHtml(b.name) + '</span>' +
+            '<button type="button" class="btn-ghost" data-toggle-nodate="' + b.id + '" style="padding:4px 10px;font-size:12px;">+ add date</button>' +
+            '<div class="nodate-form" id="nodateForm-' + b.id + '">' +
+            '<select id="ndMonth-' + b.id + '">' + MONTH_NAMES.map(function (m, i) { return '<option value="' + (i + 1) + '">' + m + '</option>'; }).join('') + '</select>' +
+            '<input type="number" min="1" max="31" placeholder="Day" id="ndDay-' + b.id + '" style="width:60px;">' +
+            '<button type="button" class="btn-dark" data-save-nodate="' + b.id + '" style="padding:0 12px;height:34px;">Save</button></div></div>';
+        }).join('') + '</div>';
+    } else {
+      noDateEl.innerHTML = '';
+    }
+
+    // Browse-all list, grouped by month
+    var browse = document.getElementById('browseAll');
+    var byMonth = {};
+    dated.slice().sort(function (a, c) { return a.month - c.month || a.day - c.day; }).forEach(function (b) {
+      (byMonth[b.month] = byMonth[b.month] || []).push(b);
+    });
+    var out = '';
+    Object.keys(byMonth).sort(function (a, c) { return a - c; }).forEach(function (m) {
+      out += '<div class="browse-month">' + MONTH_NAMES[m - 1] + '</div>';
+      byMonth[m].forEach(function (b) {
+        out += '<div class="browse-item"><span class="nm">' + escapeHtml(b.name) + (b.year ? ' <span class="dt">(' + b.year + ')</span>' : '') + '</span>' +
+          '<div class="row-right"><span class="dt">' + MONTH_NAMES[b.month - 1] + ' ' + b.day + '</span>' +
+          '<input type="tel" placeholder="phone" value="' + (b.phone ? escapeHtml(b.phone) : '') + '" data-phone="' + b.id + '">' +
+          '<button type="button" class="del" data-del-bday="' + b.id + '">remove</button></div></div>';
+      });
+    });
+    browse.innerHTML = out || '<p style="color:var(--muted);font-size:13px;">Nothing to show yet.</p>';
+
+    if (Notification && Notification.permission === 'granted') notifyToday(todays);
+  }
+
+  var notifiedOnce = false;
+  function notifyToday(todays) {
+    if (notifiedOnce || !todays.length) return;
+    notifiedOnce = true;
+    todays.forEach(function (b) {
+      try { new Notification('🎂 ' + b.name + "'s birthday today!", { body: 'Tap to open Field Ledger and send a text.' }); }
+      catch (e) { /* Notifications unsupported here */ }
+    });
+  }
+
+  function todoTemplate(item, list) {
+    return '<div class="todo-item"><button type="button" class="chk small' + (item.done ? ' done' : '') + '" data-todo="' + item.id + '" data-list="' + list + '" aria-label="' + (item.done ? 'Mark not done' : 'Mark done') + '"></button>' +
+      '<span class="todo-text' + (item.done ? ' done' : '') + '">' + escapeHtml(item.text) + '</span>' +
+      '<button type="button" class="del" data-del-todo="' + item.id + '" data-list="' + list + '">remove</button></div>';
+  }
+
+  function renderTodos() {
+    ['personal', 'work'].forEach(function (list) {
+      var items = state.todos[list];
+      var open = items.filter(function (i) { return !i.done; }).length;
+      document.getElementById(list + 'Count').textContent = open + (open === 1 ? ' open' : ' open');
+      var el = document.getElementById(list + 'List');
+      el.innerHTML = items.length
+        ? items.map(function (i) { return todoTemplate(i, list); }).join('')
+        : '<div class="empty" style="padding:20px;"><span>Nothing here yet.</span></div>';
+    });
+  }
+
+  // ---------- Goals / life balance radar ----------
+
+  var RADAR_CENTER = 160, RADAR_MAX = 120, RADAR_N = 8;
+
+  function radarAngle(i) { return (Math.PI * 2 * i / RADAR_N) - Math.PI / 2; }
+  function radarPoint(i, radius) {
+    var a = radarAngle(i);
+    return [RADAR_CENTER + radius * Math.cos(a), RADAR_CENTER + radius * Math.sin(a)];
+  }
+  function radarPolygon(radiusFn) {
+    var pts = [];
+    for (var i = 0; i < RADAR_N; i++) {
+      var p = radarPoint(i, radiusFn(i));
+      pts.push(p[0].toFixed(1) + ',' + p[1].toFixed(1));
+    }
+    return pts.join(' ');
+  }
+
+  function renderGoalsChart() {
+    var ratings = GOAL_CATEGORIES.map(function (c) { return state.goals[c.key].rating; });
+    var max = Math.max.apply(null, ratings), min = Math.min.apply(null, ratings);
+    var spread = max - min;
+    var tilted = spread >= 4;
+    var avg = ratings.reduce(function (a, b) { return a + b; }, 0) / ratings.length;
+    var accent = tilted ? 'var(--ember)' : 'var(--moss)';
+
+    var svg = '<svg viewBox="0 0 320 320" width="100%" height="320" style="max-width:360px;" role="img" aria-label="Life balance radar chart">';
+    [2, 4, 6, 8, 10].forEach(function (level) {
+      var pts = radarPolygon(function () { return (level / 10) * RADAR_MAX; });
+      svg += '<polygon points="' + pts + '" fill="none" stroke="var(--line)" stroke-width="1"></polygon>';
+    });
+    GOAL_CATEGORIES.forEach(function (c, i) {
+      var edge = radarPoint(i, RADAR_MAX);
+      svg += '<line x1="' + RADAR_CENTER + '" y1="' + RADAR_CENTER + '" x2="' + edge[0].toFixed(1) + '" y2="' + edge[1].toFixed(1) + '" stroke="var(--line)" stroke-width="1"></line>';
+      var lp = radarPoint(i, RADAR_MAX + 24);
+      var cos = Math.cos(radarAngle(i));
+      var anchor = cos > 0.35 ? 'start' : (cos < -0.35 ? 'end' : 'middle');
+      var dy = i === 0 ? -2 : (i === RADAR_N / 2 ? 10 : 4);
+      svg += '<text x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + dy).toFixed(1) + '" text-anchor="' + anchor + '" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">' + c.label + '</text>';
+    });
+    var dataPts = radarPolygon(function (i) { return (ratings[i] / 10) * RADAR_MAX; });
+    svg += '<polygon points="' + dataPts + '" fill="' + accent + '" fill-opacity="0.22" stroke="' + accent + '" stroke-width="2.5"></polygon>';
+    GOAL_CATEGORIES.forEach(function (c, i) {
+      var p = radarPoint(i, (ratings[i] / 10) * RADAR_MAX);
+      svg += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="4" fill="' + accent + '"></circle>';
+    });
+    svg += '</svg>';
+    document.getElementById('goalsChart').innerHTML = svg;
+
+    var avgTxt = 'Overall average: ' + avg.toFixed(1) + '/10.';
+    var calloutEl = document.getElementById('goalsCallout');
+    if (tilted) {
+      var lowLabels = GOAL_CATEGORIES.filter(function (c) { return state.goals[c.key].rating === min; }).map(function (c) { return c.label; });
+      var highLabels = GOAL_CATEGORIES.filter(function (c) { return state.goals[c.key].rating === max; }).map(function (c) { return c.label; });
+      calloutEl.innerHTML = '<span class="pill fire" style="margin-right:8px;">tilted</span>' +
+        escapeHtml(lowLabels.join(' & ')) + ' (' + min + '/10) is lagging well behind ' + escapeHtml(highLabels.join(' & ')) + ' (' + max + '/10). ' + avgTxt;
+    } else {
+      calloutEl.innerHTML = '<span class="pill" style="margin-right:8px;background:var(--moss);">balanced</span>' +
+        'Only a ' + spread + '-point spread across areas. ' + avgTxt;
+    }
+  }
+
+  function goalItemTemplate(key, scope, item) {
+    return '<div class="todo-item"><button type="button" class="chk small' + (item.done ? ' done' : '') + '" data-goal-item="' + item.id + '" data-goal-key="' + key + '" data-goal-scope="' + scope + '" aria-label="' + (item.done ? 'Mark not done' : 'Mark done') + '"></button>' +
+      '<span class="todo-text' + (item.done ? ' done' : '') + '">' + escapeHtml(item.text) + '</span>' +
+      '<button type="button" class="del" data-del-goal-item="' + item.id + '" data-goal-key="' + key + '" data-goal-scope="' + scope + '">remove</button></div>';
+  }
+
+  function renderGoalsGrid() {
+    document.getElementById('goalsGrid').innerHTML = GOAL_CATEGORIES.map(function (c) {
+      var g = state.goals[c.key];
+      var updated = g.updatedAt ? ('updated ' + g.updatedAt) : 'not yet rated';
+      var openDaily = g.daily.filter(function (i) { return !i.done; }).length;
+      var openAnnual = g.annual.filter(function (i) { return !i.done; }).length;
+      return '<div class="goal-card">' +
+        '<div class="goal-card-head"><h3>' + c.label + '</h3><span class="goal-updated">' + updated + '</span></div>' +
+        '<div class="goal-rating-row"><input type="range" min="0" max="10" step="1" value="' + g.rating + '" data-goal-rating="' + c.key + '" aria-label="' + c.label + ' rating"><span class="goal-rating-val" id="ratingVal-' + c.key + '">' + g.rating + '/10</span></div>' +
+        '<p class="goal-updated" style="margin-top:8px;">' + openDaily + ' open daily &middot; ' + openAnnual + ' open annual</p></div>';
+    }).join('');
+  }
+
+  function goalSubsectionHtml(key, scope, label) {
+    var list = state.goals[key][scope];
+    var itemsHtml = list.length
+      ? list.map(function (i) { return goalItemTemplate(key, scope, i); }).join('')
+      : '<div class="empty" style="padding:10px;"><span>No ' + scope + ' goals yet.</span></div>';
+    return '<div class="goal-subsection"><p class="goal-sub-label">' + label + '</p>' +
+      '<div class="todo-list">' + itemsHtml + '</div>' +
+      '<div class="todo-add" style="margin-top:8px;margin-bottom:0;">' +
+      '<input type="text" placeholder="Add a ' + scope + ' goal…" maxlength="120" data-goal-input="' + key + '" data-goal-scope="' + scope + '">' +
+      '<button type="button" data-goal-add="' + key + '" data-goal-scope="' + scope + '">Add</button></div></div>';
+  }
+
+  function renderGoalsAll() {
+    document.getElementById('goalsAllGrid').innerHTML = GOAL_CATEGORIES.map(function (c) {
+      return '<div class="goal-card"><div class="goal-card-head"><h3>' + c.label + '</h3></div>' +
+        goalSubsectionHtml(c.key, 'daily', 'Daily') +
+        goalSubsectionHtml(c.key, 'annual', 'Annual') +
+        '</div>';
+    }).join('');
+  }
+
+  function setGoalRating(key, val) {
+    state.goals[key].rating = +val;
+    state.goals[key].updatedAt = todayKey();
+    saveData();
+  }
+  function addGoalItem(key, scope, text) {
+    var trimmed = (text || '').trim();
+    if (!trimmed) return;
+    state.goals[key][scope].push({ id: uid('g'), text: trimmed, done: false });
+    saveData(); renderGoalsAll(); renderGoalsGrid();
+  }
+  function toggleGoalItem(key, scope, id) {
+    var item = state.goals[key][scope].find(function (x) { return x.id === id; });
+    if (!item) return;
+    item.done = !item.done;
+    saveData(); renderGoalsAll(); renderGoalsGrid();
+  }
+  function removeGoalItem(key, scope, id) {
+    state.goals[key][scope] = state.goals[key][scope].filter(function (x) { return x.id !== id; });
+    saveData(); renderGoalsAll(); renderGoalsGrid();
+  }
+
+  // ---------- Journal ----------
+
+  function renderJournal() {
+    var tKey = todayKey();
+    var ta = document.getElementById('journalToday');
+    if (document.activeElement !== ta) ta.value = state.journal[tKey] || '';
+    document.getElementById('journalTodayDate').textContent =
+      new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+    var pastKeys = Object.keys(state.journal).filter(function (k) { return k !== tKey && state.journal[k] && state.journal[k].trim(); }).sort().reverse();
+    document.getElementById('journalPastSummary').textContent = 'Past entries (' + pastKeys.length + ')';
+    var pastEl = document.getElementById('journalPast');
+    pastEl.innerHTML = pastKeys.length
+      ? pastKeys.map(function (k) {
+          return '<div class="journal-entry"><div class="je-head"><span>' + k + '</span>' +
+            '<button type="button" class="del" data-del-journal="' + k + '">remove</button></div>' +
+            '<p class="je-text">' + escapeHtml(state.journal[k]) + '</p></div>';
+        }).join('')
+      : '<p style="color:var(--muted);font-size:13px;">Nothing written yet.</p>';
+  }
+
+  function saveJournalToday(text) {
+    state.journal[todayKey()] = text;
+    saveData();
+    var note = document.getElementById('journalSavedNote');
+    note.textContent = 'Saved ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function removeJournalEntry(key) {
+    delete state.journal[key];
+    saveData(); renderJournal();
+  }
+
+  function render() {
+    renderDate();
+    renderHabits();
+    renderBirthdays();
+    renderTodos();
+    renderGoalsChart();
+    renderGoalsGrid();
+    renderGoalsAll();
+    renderJournal();
+  }
+
+  // ---------- Actions: habits ----------
+
+  function addHabit(name) {
+    var trimmed = (name || '').trim();
+    if (!trimmed) return;
+    state.habits.push({ id: uid('h'), name: trimmed, createdAt: todayKey(), entries: {} });
+    saveData(); render();
+  }
+  function toggleHabitToday(id) {
+    var h = state.habits.find(function (x) { return x.id === id; });
+    if (!h) return;
+    var k = todayKey();
+    if (h.entries[k]) delete h.entries[k]; else h.entries[k] = true;
+    saveData(); render();
+  }
+  function toggleHabitDate(id, dateKey) {
+    var h = state.habits.find(function (x) { return x.id === id; });
+    if (!h || dateKey > todayKey()) return;
+    if (h.entries[dateKey]) delete h.entries[dateKey]; else h.entries[dateKey] = true;
+    saveData(); render();
+  }
+  function removeHabit(id) {
+    state.habits = state.habits.filter(function (h) { return h.id !== id; });
+    saveData(); render();
+  }
+
+  // ---------- Actions: birthdays ----------
+
+  function addBirthday(name, month, day, phone) {
+    var trimmed = (name || '').trim();
+    if (!trimmed || !month || !day) return;
+    state.birthdays.push({ id: uid('b'), name: trimmed, month: +month, day: +day, year: null, phone: phone ? phone.trim() : null, sentYears: {} });
+    saveData(); render();
+  }
+  function removeBirthday(id) {
+    state.birthdays = state.birthdays.filter(function (b) { return b.id !== id; });
+    saveData(); render();
+  }
+  function setBirthdayPhone(id, phone) {
+    var b = state.birthdays.find(function (x) { return x.id === id; });
+    if (!b) return;
+    b.phone = phone.trim() || null;
+    saveData();
+  }
+  function toggleSent(id, checked) {
+    var b = state.birthdays.find(function (x) { return x.id === id; });
+    if (!b) return;
+    var year = currentYear();
+    if (checked) b.sentYears[year] = true; else delete b.sentYears[year];
+    saveData(); render();
+  }
+  function setNoDateBirthday(id, month, day) {
+    var b = state.birthdays.find(function (x) { return x.id === id; });
+    if (!b || !month || !day) return;
+    b.month = +month; b.day = +day;
+    saveData(); render();
+  }
+  function copyMessage(name, btn) {
+    var msg = birthdayMessage(name);
+    var done = function () {
+      var original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(function () { btn.textContent = original; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(msg).then(done).catch(function () { fallbackCopy(msg, done); });
+    } else {
+      fallbackCopy(msg, done);
+    }
+  }
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { /* copy unsupported */ }
+    document.body.removeChild(ta);
+  }
+
+  // ---------- Actions: todos ----------
+
+  function addTodo(list, text) {
+    var trimmed = (text || '').trim();
+    if (!trimmed) return;
+    state.todos[list].push({ id: uid('t'), text: trimmed, done: false });
+    saveData(); render();
+  }
+  function toggleTodo(list, id) {
+    var item = state.todos[list].find(function (x) { return x.id === id; });
+    if (!item) return;
+    item.done = !item.done;
+    saveData(); render();
+  }
+  function removeTodo(list, id) {
+    state.todos[list] = state.todos[list].filter(function (x) { return x.id !== id; });
+    saveData(); render();
+  }
+
+  // ---------- Wiring ----------
+
+  document.getElementById('addHabitBtn').addEventListener('click', function () {
+    var input = document.getElementById('newHabitInput');
+    addHabit(input.value); input.value = ''; input.focus();
+  });
+  document.getElementById('newHabitInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('addHabitBtn').click();
+  });
+  document.getElementById('habitsList').addEventListener('click', function (e) {
+    var chk = e.target.closest('.chk'); if (chk) return toggleHabitToday(chk.dataset.habit);
+    var dot = e.target.closest('.dot'); if (dot) return toggleHabitDate(dot.dataset.habit, dot.dataset.date);
+    var del = e.target.closest('[data-del-habit]'); if (del) return removeHabit(del.dataset.delHabit);
+  });
+
+  document.getElementById('toggleAddBday').addEventListener('click', function () {
+    var form = document.getElementById('addBdayForm');
+    form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+  });
+  document.getElementById('addBdayBtn').addEventListener('click', function () {
+    addBirthday(
+      document.getElementById('bdayName').value,
+      document.getElementById('bdayMonth').value,
+      document.getElementById('bdayDay').value,
+      document.getElementById('bdayPhone').value
+    );
+    document.getElementById('bdayName').value = '';
+    document.getElementById('bdayDay').value = '';
+    document.getElementById('bdayPhone').value = '';
+  });
+
+  function wireBdaySectionClicks(container) {
+    container.addEventListener('click', function (e) {
+      var copyBtn = e.target.closest('[data-copy]');
+      if (copyBtn) {
+        var b = state.birthdays.find(function (x) { return x.id === copyBtn.dataset.copy; });
+        if (b) copyMessage(b.name, copyBtn);
+        return;
+      }
+      var toggleNd = e.target.closest('[data-toggle-nodate]');
+      if (toggleNd) {
+        var f = document.getElementById('nodateForm-' + toggleNd.dataset.toggleNodate);
+        if (f) f.classList.toggle('open');
+        return;
+      }
+      var saveNd = e.target.closest('[data-save-nodate]');
+      if (saveNd) {
+        var id = saveNd.dataset.saveNodate;
+        var m = document.getElementById('ndMonth-' + id).value;
+        var d = document.getElementById('ndDay-' + id).value;
+        return setNoDateBirthday(id, m, d);
+      }
+      var delB = e.target.closest('[data-del-bday]');
+      if (delB) return removeBirthday(delB.dataset.delBday);
+    });
+    container.addEventListener('change', function (e) {
+      var sentBox = e.target.closest('[data-sent]');
+      if (sentBox) return toggleSent(sentBox.dataset.sent, sentBox.checked);
+      var phoneInput = e.target.closest('[data-phone]');
+      if (phoneInput) return setBirthdayPhone(phoneInput.dataset.phone, phoneInput.value);
+    });
+  }
+  wireBdaySectionClicks(document.getElementById('bdaySection'));
+
+  document.getElementById('notifyBtn').addEventListener('click', function () {
+    if (!('Notification' in window)) { alert('Notifications are not supported in this browser.'); return; }
+    Notification.requestPermission().then(function (perm) {
+      if (perm === 'granted') { notifiedOnce = false; renderBirthdays(); }
+    });
+  });
+
+  function wireTodoColumn(list) {
+    var input = document.getElementById(list + 'Input');
+    var btn = document.getElementById(list + 'AddBtn');
+    btn.addEventListener('click', function () { addTodo(list, input.value); input.value = ''; input.focus(); });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') btn.click(); });
+    document.getElementById(list + 'List').addEventListener('click', function (e) {
+      var chk = e.target.closest('.chk'); if (chk) return toggleTodo(list, chk.dataset.todo);
+      var del = e.target.closest('[data-del-todo]'); if (del) return removeTodo(list, del.dataset.delTodo);
+    });
+  }
+  wireTodoColumn('personal');
+  wireTodoColumn('work');
+
+  var goalsGridEl = document.getElementById('goalsGrid');
+  goalsGridEl.addEventListener('input', function (e) {
+    var slider = e.target.closest('[data-goal-rating]');
+    if (!slider) return;
+    var key = slider.dataset.goalRating;
+    document.getElementById('ratingVal-' + key).textContent = slider.value + '/10';
+    state.goals[key].rating = +slider.value;
+    renderGoalsChart();
+  });
+  goalsGridEl.addEventListener('change', function (e) {
+    var slider = e.target.closest('[data-goal-rating]');
+    if (!slider) return;
+    setGoalRating(slider.dataset.goalRating, slider.value);
+    renderGoalsGrid();
+  });
+
+  var goalsAllGridEl = document.getElementById('goalsAllGrid');
+  goalsAllGridEl.addEventListener('click', function (e) {
+    var addBtn = e.target.closest('[data-goal-add]');
+    if (addBtn) {
+      var key = addBtn.dataset.goalAdd, scope = addBtn.dataset.goalScope;
+      var input = goalsAllGridEl.querySelector('[data-goal-input="' + key + '"][data-goal-scope="' + scope + '"]');
+      addGoalItem(key, scope, input.value);
+      return;
+    }
+    var chk = e.target.closest('[data-goal-item]');
+    if (chk) return toggleGoalItem(chk.dataset.goalKey, chk.dataset.goalScope, chk.dataset.goalItem);
+    var del = e.target.closest('[data-del-goal-item]');
+    if (del) return removeGoalItem(del.dataset.goalKey, del.dataset.goalScope, del.dataset.delGoalItem);
+  });
+  goalsAllGridEl.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var input = e.target.closest('[data-goal-input]');
+    if (input) goalsAllGridEl.querySelector('[data-goal-add="' + input.dataset.goalInput + '"][data-goal-scope="' + input.dataset.goalScope + '"]').click();
+  });
+
+  var journalTimer = null;
+  var journalTextarea = document.getElementById('journalToday');
+  journalTextarea.addEventListener('input', function (e) {
+    document.getElementById('journalSavedNote').textContent = 'Saving…';
+    clearTimeout(journalTimer);
+    var text = e.target.value;
+    journalTimer = setTimeout(function () { saveJournalToday(text); }, 600);
+  });
+  journalTextarea.addEventListener('blur', function (e) {
+    clearTimeout(journalTimer);
+    saveJournalToday(e.target.value);
+  });
+  document.getElementById('journalPast').addEventListener('click', function (e) {
+    var del = e.target.closest('[data-del-journal]');
+    if (del) removeJournalEntry(del.dataset.delJournal);
+  });
+
+  // ---------- Password gate ----------
+  // Note: this is a lightweight gate on top of your Claude account access.
+  // It keeps casual glances out, but it is not strong security on its own —
+  // real protection here comes from needing to be signed into your Claude
+  // account to open this conversation at all.
+
+  var AUTH_KEY = 'field-ledger-auth-v1';
+  // Default password hash — plaintext is never stored in this file, only its SHA-256 digest.
+  var DEFAULT_AUTH_HASH = '492857fb305eacd237e0eec6725cc82c78497c8662488c23f8775416863ec283';
+
+  async function sha256Hex(str) {
+    try {
+      if (window.crypto && window.crypto.subtle) {
+        var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      }
+    } catch (e) { /* fall through to fallback */ }
+    var h = 0;
+    for (var i = 0; i < str.length; i++) { h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; }
+    return 'fb-' + h;
+  }
+
+  async function getAuth() {
+    try {
+      var res = await storageGet(AUTH_KEY);
+      return res && res.value ? JSON.parse(res.value) : null;
+    } catch (e) { return null; }
+  }
+  async function setAuth(hash) {
+    try { await storageSet(AUTH_KEY, JSON.stringify({ hash: hash })); } catch (e) { /* ignore */ }
+  }
+  async function ensureDefaultAuth() {
+    var a = await getAuth();
+    if (!a) await setAuth(DEFAULT_AUTH_HASH);
+  }
+
+  function showApp() {
+    document.getElementById('lockOverlay').style.display = 'none';
+    document.getElementById('mainWrap').style.display = '';
+    render();
+  }
+
+  async function initLock() {
+    var auth = await getAuth();
+    var setFields = document.getElementById('setPassFields');
+    var enterFields = document.getElementById('enterPassFields');
+    document.getElementById('lockError').textContent = '';
+    if (auth && auth.hash) {
+      setFields.style.display = 'none';
+      enterFields.style.display = 'flex';
+      document.getElementById('lockTitle').textContent = 'Enter password';
+      document.getElementById('lockSubtitle').textContent = 'This ledger is locked — same password on every device.';
+      document.getElementById('enterPass').value = '';
+      document.getElementById('enterPass').focus();
+    } else {
+      setFields.style.display = 'flex';
+      enterFields.style.display = 'none';
+      document.getElementById('lockTitle').textContent = 'Set a password';
+      document.getElementById('lockSubtitle').textContent = 'Choose a password to protect this ledger — it will apply on every device.';
+      document.getElementById('setPass1').value = '';
+      document.getElementById('setPass2').value = '';
+    }
+  }
+
+  document.getElementById('setPassBtn').addEventListener('click', async function () {
+    var p1 = document.getElementById('setPass1').value;
+    var p2 = document.getElementById('setPass2').value;
+    var err = document.getElementById('lockError');
+    if (!p1 || p1.length < 4) { err.textContent = 'Use at least 4 characters.'; return; }
+    if (p1 !== p2) { err.textContent = 'Passwords do not match.'; return; }
+    err.textContent = '';
+    await setAuth(await sha256Hex(p1));
+    showApp();
+  });
+
+  document.getElementById('unlockBtn').addEventListener('click', async function () {
+    var p = document.getElementById('enterPass').value;
+    var err = document.getElementById('lockError');
+    var auth = await getAuth();
+    var hash = await sha256Hex(p);
+    if (auth && hash === auth.hash) { err.textContent = ''; showApp(); }
+    else { err.textContent = 'Incorrect password.'; }
+  });
+
+  document.getElementById('setPass2').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('setPassBtn').click(); });
+  document.getElementById('enterPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('unlockBtn').click(); });
+
+  document.getElementById('resetPassBtn').addEventListener('click', async function () {
+    if (confirm("Reset the password? Your habits, to-dos, and birthdays stay saved — you'll just set a new password (it will apply on every device too).")) {
+      try { await storageDelete(AUTH_KEY); } catch (e) { /* ignore */ }
+      await initLock();
+    }
+  });
+
+  // ---------- Backup: export / import (for moving data to another device) ----------
+
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'field-ledger-backup-' + todayKey() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('importBtn').addEventListener('click', function () {
+    document.getElementById('importFile').click();
+  });
+
+  document.getElementById('importFile').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var parsed;
+      try { parsed = JSON.parse(reader.result); }
+      catch (err) { alert("Could not read that file — it doesn't look like valid backup data."); return; }
+      if (!parsed || !Array.isArray(parsed.habits) || !parsed.todos || !Array.isArray(parsed.birthdays)) {
+        alert("That file doesn't look like a Field Ledger backup.");
+        return;
+      }
+      if (!confirm('Import this backup? It will replace everything currently saved on this device.')) return;
+      if (!parsed.goals) parsed.goals = defaultGoals();
+      GOAL_CATEGORIES.forEach(function (c) {
+        var g = parsed.goals[c.key];
+        if (!g) { parsed.goals[c.key] = { rating: 5, updatedAt: null, daily: [], annual: [] }; return; }
+        if (Array.isArray(g.items) && !Array.isArray(g.daily)) { g.daily = g.items; delete g.items; }
+        if (!Array.isArray(g.daily)) g.daily = [];
+        if (!Array.isArray(g.annual)) g.annual = [];
+      });
+      if (!parsed.journal || typeof parsed.journal !== 'object') parsed.journal = {};
+      state = parsed;
+      saveData();
+      render();
+      alert('Import complete.');
+    };
+    reader.onerror = function () { alert('Could not read that file.'); };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  (async function boot() {
+    document.getElementById('lockTitle').textContent = 'Loading…';
+    document.getElementById('lockSubtitle').textContent = 'Fetching your ledger.';
+    state = await loadData();
+    await ensureDefaultAuth();
+    await initLock();
+  })();
+})();
+</script>
+</body>
+</html>
