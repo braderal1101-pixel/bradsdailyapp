@@ -821,7 +821,7 @@
     });
     browse.innerHTML = out || '<p style="color:var(--muted);font-size:13px;">Nothing to show yet.</p>';
 
-    if (Notification && Notification.permission === 'granted') notifyToday(todays);
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') notifyToday(todays);
   }
 
   var notifiedOnce = false;
@@ -1322,29 +1322,33 @@
     }
   });
 
-  auth.onAuthStateChanged(async function (user) {
-    if (user) {
-      currentUid = user.uid;
-      showLogin('');
-      document.getElementById('lockTitle').textContent = 'Loading…';
-      document.getElementById('lockSubtitle').textContent = 'Fetching your ledger.';
-      try {
-        state = await withTimeout(loadData(), 15000);
-        showApp();
-        render();
-      } catch (e) {
-        console.error(e);
-        var detail = e && e.code === 'timeout'
-          ? 'Timed out loading your data.'
-          : 'Could not load your data — ' + ((e && (e.code || e.message)) || String(e)) + '.';
-        showLogin(detail + ' Check your connection, then reload the page.');
+  if (!auth || !db) {
+    showLogin('Firebase did not load — the app cannot work until this is fixed. Check your connection, then reload the page. If it keeps happening, the Firebase scripts may be blocked or missing from the page.');
+  } else {
+    auth.onAuthStateChanged(async function (user) {
+      if (user) {
+        currentUid = user.uid;
+        showLogin('');
+        document.getElementById('lockTitle').textContent = 'Loading…';
+        document.getElementById('lockSubtitle').textContent = 'Fetching your ledger.';
+        try {
+          state = await withTimeout(loadData(), 15000);
+          showApp();
+          render();
+        } catch (e) {
+          console.error(e);
+          var detail = e && e.code === 'timeout'
+            ? 'Timed out loading your data.'
+            : 'Could not load your data — ' + ((e && (e.code || e.message)) || String(e)) + '.';
+          showLogin(detail + ' Check your connection, then reload the page.');
+        }
+      } else {
+        currentUid = null;
+        state = null;
+        showLogin('');
       }
-    } else {
-      currentUid = null;
-      state = null;
-      showLogin('');
-    }
-  });
+    });
+  }
 
   // ---------- Backup: export / import (for moving data to another device) ----------
 
